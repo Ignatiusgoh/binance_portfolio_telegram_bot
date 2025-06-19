@@ -9,11 +9,21 @@ import time
 load_dotenv()
 
 # Supabase credentials
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_API_KEY")
-supabase = create_client(supabase_url, supabase_key)
+# supabase_url = os.getenv("SUPABASE_URL")
+# supabase_key = os.getenv("SUPABASE_API_KEY")
+# supabase = create_client(supabase_url, supabase_key)
+
+def get_supabase_client():
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_API_KEY")
+
+    if not supabase_url or not supabase_key:
+        raise ValueError("❌ SUPABASE_URL or SUPABASE_API_KEY is not set in environment variables.")
+
+    return create_client(supabase_url, supabase_key)
 
 def analyze_trades():
+    supabase = get_supabase_client()
     max_retries = 5
     retry_delay = 0.5  # seconds
 
@@ -68,5 +78,3 @@ def analyze_trades():
         f"Max Drawdown: {max_drawdown:.4f}"
     )
 
-    
-print(analyze_trades())
