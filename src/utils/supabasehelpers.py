@@ -4,6 +4,7 @@ import requests
 from supabase import create_client, Client as SupabaseClient
 import os 
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
@@ -13,8 +14,6 @@ supabase_key = os.getenv("SUPABASE_API_KEY")
 print(supabase_url)
 print(supabase_key)
 supabase = create_client(supabase_url, supabase_key)
-
-import time
 
 def analyze_trades():
     max_retries = 5
@@ -72,4 +71,4 @@ def analyze_trades():
     )
 
     
-analyze_trades()
+print(analyze_trades())
