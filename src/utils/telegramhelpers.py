@@ -4,8 +4,14 @@ import requests
 from src.utils.binancehelpers import get_usdt_balance, get_open_positions
 from src.utils.supabasehelpers import analyze_trades
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup
 from supabase import create_client, Client as SupabaseClient
+
+keyboard = [["/balance", "/positions", "/stats"]]
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text("📊 Welcome! Choose an option below:", reply_markup=reply_markup)
 
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     balance = get_usdt_balance()
