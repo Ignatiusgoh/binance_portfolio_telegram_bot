@@ -18,6 +18,7 @@ def analyze_trades():
     try:
         response = supabase.table("trades").select("*").order("entry_time").execute()
         trades = response.data
+        print(trades)
 
         win = 0
         loss = 0
@@ -52,12 +53,17 @@ def analyze_trades():
                 max_drawdown = drawdown
 
         total = len(trades)
-        return (
+        print (
             f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
             f"Total Realized PnL: {total_pnl:.4f}\n"
             f"Max Drawdown: {max_drawdown:.4f}"
         )
 
+        return (
+            f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
+            f"Total Realized PnL: {total_pnl:.4f}\n"
+            f"Max Drawdown: {max_drawdown:.4f}"
+        )
     except Exception as e:
         return f"❌ Error fetching trade data: {e}"
     
