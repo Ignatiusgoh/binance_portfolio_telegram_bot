@@ -3,9 +3,9 @@ import time
 import requests
 from binance.client import Client
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
 # from supabase import create_client, Client as SupabaseClient
-from src.utils.telegramhelpers import balance, positions, stats, start
+from src.utils.telegramhelpers import start, button_handler
 import os 
 from dotenv import load_dotenv
 
@@ -18,9 +18,12 @@ api_secret = os.getenv('BINANCE_API_SECRET')
 app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
 app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("balance", balance))
-app.add_handler(CommandHandler("positions", positions))
-app.add_handler(CommandHandler("stats", stats))
+app.add_handler(CallbackQueryHandler(button_handler))
+
+# app.add_handler(CommandHandler("start", start))
+# app.add_handler(CommandHandler("balance", balance))
+# app.add_handler(CommandHandler("positions", positions))
+# app.add_handler(CommandHandler("stats", stats))
 
 print("Bot is running...")
 app.run_polling()
