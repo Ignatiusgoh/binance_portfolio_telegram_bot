@@ -3,7 +3,7 @@ import time
 import requests
 from src.utils.binancehelpers import get_usdt_balance, get_open_positions
 from src.utils.supabasehelpers import analyze_trades
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextType, CallbackQueryHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 from supabase import create_client, Client as SupabaseClient
 
