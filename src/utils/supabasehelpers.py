@@ -14,57 +14,62 @@ print(supabase_url)
 print(supabase_key)
 supabase = create_client(supabase_url, supabase_key)
 
+import time
+
 def analyze_trades():
-    try:
-        response = supabase.table("trades").select("*").order("entry_time").execute()
-        trades = response.data
-        print(trades)
+    max_retries = 5
+    retry_delay = 0.5  # seconds
 
-        win = 0
-        loss = 0
-        breakeven = 0
-        cumulative_pnl = []
-        total_pnl = 0
+    trades = None
+    for attempt in range(max_retries):
+        try:
+            response = supabase.table("trades").select("*").order("entry_time").execute()
+            trades = response.data
+            if trades is not None:
+                break  # Exit loop if we got valid data
+        except Exception as e:
+            print(f"⚠️ Attempt {attempt + 1} failed: {e}")
+            time.sleep(retry_delay)
 
-        for trade in trades:
-            pnl = trade.get('realized_pnl', 0)
+    if trades is None:
+        return "❌ Failed to fetch trade data after 5 attempts."
 
-            # Classify trade outcome
-            if pnl > 1:
-                win += 1
-            elif pnl < -1:
-                loss += 1
-            else:
-                breakeven += 1
+    # Process trades
+    win = 0
+    loss = 0
+    breakeven = 0
+    cumulative_pnl = []
+    total_pnl = 0
 
-            # Track cumulative PnL
-            total_pnl += pnl
-            cumulative_pnl.append(total_pnl)
+    for trade in trades:
+        pnl = trade.get('realized_pnl', 0)
 
-        # Calculate Max Drawdown
-        max_drawdown = 0
-        peak = float('-inf')
+        if pnl > 1:
+            win += 1
+        elif pnl < -1:
+            loss += 1
+        else:
+            breakeven += 1
 
-        for value in cumulative_pnl:
-            if value > peak:
-                peak = value
-            drawdown = peak - value
-            if drawdown > max_drawdown:
-                max_drawdown = drawdown
+        total_pnl += pnl
+        cumulative_pnl.append(total_pnl)
 
-        total = len(trades)
-        print (
-            f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
-            f"Total Realized PnL: {total_pnl:.4f}\n"
-            f"Max Drawdown: {max_drawdown:.4f}"
-        )
+    # Calculate Max Drawdown
+    max_drawdown = 0
+    peak = float('-inf')
+    for value in cumulative_pnl:
+        if value > peak:
+            peak = value
+        drawdown = peak - value
+        if drawdown > max_drawdown:
+            max_drawdown = drawdown
 
-        return (
-            f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
-            f"Total Realized PnL: {total_pnl:.4f}\n"
-            f"Max Drawdown: {max_drawdown:.4f}"
-        )
-    except Exception as e:
-        return f"❌ Error fetching trade data: {e}"
+    total = len(trades)
+    return (
+        f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
+        f"Total Realized PnL: {total_pnl:.4f}\n"
+        f"Max Drawdown: {max_drawdown:.4f}"
+    )
+
     
 analyze_trades()
