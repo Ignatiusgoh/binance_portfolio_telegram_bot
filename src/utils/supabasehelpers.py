@@ -51,17 +51,22 @@ def analyze_trades():
 
     for trade in trades:
         pnl = trade.get('realized_pnl', 0)
+        entry_price = trade.get('entry_price',0)
+        qty = trade.get('qty',0)
 
-        if pnl > 0.5:
+        pnl_post_fee = pnl - (entry_price * qty) * 0.07/100
+
+        if pnl_post_fee > 0.5:
             win += 1
             r_ratio = pnl / 2 
             r_ratios.append(r_ratio)
-        elif pnl < -0.5:
+        elif pnl_post_fee < -0.5:
             loss += 1
         else:
             breakeven += 1
-
-        total_pnl += pnl
+        
+        
+        total_pnl += pnl_post_fee
         cumulative_pnl.append(total_pnl)
 
     # Calculate Max Drawdown
