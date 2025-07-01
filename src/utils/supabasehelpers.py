@@ -46,14 +46,17 @@ def analyze_trades():
     loss = 0
     breakeven = 0
     cumulative_pnl = []
+    r_ratios = []
     total_pnl = 0
 
     for trade in trades:
         pnl = trade.get('realized_pnl', 0)
 
-        if pnl > 1:
+        if pnl > 0.5:
             win += 1
-        elif pnl < -1:
+            r_ratio = pnl / 2 
+            r_ratios.append(r_ratio)
+        elif pnl < -0.5:
             loss += 1
         else:
             breakeven += 1
@@ -71,10 +74,13 @@ def analyze_trades():
         if drawdown > max_drawdown:
             max_drawdown = drawdown
 
-    total = len(trades)
+    total = len(trades)     
+    average_r_ratio = sum(r_ratios) / len(r_ratios)
+
     return (
         f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
         f"Total Realized PnL: {total_pnl:.4f}\n"
         f"Max Drawdown: {max_drawdown:.4f}"
+        f"Average R ratio: {average_r_ratio:.4f}"
     )
 
