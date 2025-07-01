@@ -80,7 +80,7 @@ def analyze_trades():
     return (
         f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
         f"Total Realized PnL: {total_pnl:.4f}\n"
-        f"Max Drawdown: {max_drawdown:.4f}"
+        f"Max Drawdown: {max_drawdown:.4f}\n"
         f"Average R ratio: {average_r_ratio:.4f}"
     )
 
