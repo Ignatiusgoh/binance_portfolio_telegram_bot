@@ -8,10 +8,9 @@ import time
 
 load_dotenv()
 
-# Supabase credentials
-# supabase_url = os.getenv("SUPABASE_URL")
-# supabase_key = os.getenv("SUPABASE_API_KEY")
-# supabase = create_client(supabase_url, supabase_key)
+orders_table = "orders" if os.getenv("STRATEGY_ENV") == 1 else "orders2"
+order_groups_table = "order_groups" if os.getenv("STRATEGY_ENV") == 1 else "order_groups2"
+trades_table = "trades" if os.getenv("STRATEGY_ENV") == 1 else "trades2"
 
 def get_supabase_client():
     supabase_url = os.getenv("SUPABASE_URL")
@@ -30,7 +29,7 @@ def analyze_trades():
     trades = None
     for attempt in range(max_retries):
         try:
-            response = supabase.table("trades").select("*").order("entry_time").execute()
+            response = supabase.table(trades_table).select("*").order("entry_time").execute()
             trades = response.data
             if trades is not None:
                 break  # Exit loop if we got valid data
