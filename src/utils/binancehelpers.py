@@ -13,8 +13,8 @@ load_dotenv()
 # Binance API Keys
 api_key_strat_1 = os.getenv('BINANCE_API_KEY_STRAT_1')
 api_secret_strat_1 = os.getenv('BINANCE_API_SECRET_STRAT_1')
-api_key_strat_2 = os.getenv('BINANCE_API_KEY_STRAT_1')
-api_secret_strat_2 = os.getenv('BINANCE_API_SECRET_STRAT_1')
+api_key_strat_2 = os.getenv('BINANCE_API_KEY_STRAT_2')
+api_secret_strat_2 = os.getenv('BINANCE_API_SECRET_STRAT_2')
 
 client_strat_1 = Client(api_key=api_key_strat_1, api_secret=api_secret_strat_1)
 client_strat_2 = Client(api_key=api_key_strat_2, api_secret=api_secret_strat_2)
