@@ -22,15 +22,19 @@ async def handle_custom_buttons(update: Update, context: ContextTypes.DEFAULT_TY
 
     if text == "📊 Show current portfolio balance":
         balance = get_usdt_balance()
-        await update.message.reply_text(f"💰 Current USDT Balance: {balance:.2f}")
+        await update.message.reply_text(f"💰 STRATEGY 1 Current USDT Balance: {balance[0]:.2f}")
+        await update.message.reply_text(f"💰 STRATEGY 2 Current USDT Balance: {balance[1]:.2f}")
 
     elif text == "📈 Show open positions":
         positions = get_open_positions()
-        if not positions:
-            await update.message.reply_text("📭 No open positions.")
+        if not positions[0]:
+            await update.message.reply_text("📭 STRATEGY 1 No open positions.")
+        if not positions[1]:
+            await update.message.reply_text("📭 STRATEGY 2 No open positions.")
         else:
-            msg = "\n".join([f"{p['symbol']}: {p['positionAmt']} @ {p['entryPrice']}" for p in positions])
-            await update.message.reply_text(f"📈 Open Positions:\n{msg}")
+            msg_1 = "\n".join([f"STRATEGY 1 {p['symbol']}: {p['positionAmt']} @ {p['entryPrice']}" for p in positions[0]])
+            msg_2 = "\n".join([f"STRATEGY 2 {p['symbol']}: {p['positionAmt']} @ {p['entryPrice']}" for p in positions[1]])
+            await update.message.reply_text(f"📈 Open Positions:\n{msg_1}\n{msg_2}")
 
     elif text == "📋 Show trade statistics":
         stats = analyze_trades()
