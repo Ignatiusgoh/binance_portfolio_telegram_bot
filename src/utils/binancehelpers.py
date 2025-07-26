@@ -47,3 +47,6 @@ def get_open_positions():
     except Exception as e:
         logging.warning(f"⚠️ Error fetching positions: {e}")
         return []
+    
+if __name__ == '__main__': 
+    print(get_usdt_balance())
