@@ -8,9 +8,9 @@ import time
 
 load_dotenv()
 
-orders_table = "orders" if os.getenv("STRATEGY_ENV") == 1 else "orders2"
-order_groups_table = "order_groups" if os.getenv("STRATEGY_ENV") == 1 else "order_groups2"
-trades_table = "trades" if os.getenv("STRATEGY_ENV") == 1 else "trades2"
+orders_table = "orders" if int(os.getenv("STRATEGY_ENV")) == 1 else "orders2"
+order_groups_table = "order_groups" if int(os.getenv("STRATEGY_ENV")) == 1 else "order_groups2"
+trades_table = "trades" if int(os.getenv("STRATEGY_ENV")) == 1 else "trades2"
 
 def get_supabase_client():
     supabase_url = os.getenv("SUPABASE_URL")
@@ -26,65 +26,70 @@ def analyze_trades():
     max_retries = 5
     retry_delay = 0.5  # seconds
 
-    trades = None
-    for attempt in range(max_retries):
-        try:
-            response = supabase.table(trades_table).select("*").order("entry_time").execute()
-            trades = response.data
-            if trades is not None:
-                break  # Exit loop if we got valid data
-        except Exception as e:
-            print(f"⚠️ Attempt {attempt + 1} failed: {e}")
-            time.sleep(retry_delay)
+    trade_tables = ["trades","trades2"]
+    msg = ""
 
-    if trades is None:
-        return "❌ Failed to fetch trade data after 5 attempts."
+    for trade_table in trade_tables:
+        trades = None
+        for attempt in range(max_retries):
+            try:
+                response = supabase.table(trade_table).select("*").order("entry_time").execute()
+                trades = response.data
+                if trades is not None:
+                    break  # Exit loop if we got valid data
+            except Exception as e:
+                print(f"⚠️ Attempt {attempt + 1} failed: {e}")
+                time.sleep(retry_delay)
 
-    # Process trades
-    win = 0
-    loss = 0
-    breakeven = 0
-    cumulative_pnl = []
-    r_ratios = []
-    total_pnl = 0
+        if trades is None:
+            return "❌ Failed to fetch trade data after 5 attempts."
 
-    for trade in trades:
-        pnl = trade.get('realized_pnl', 0)
-        entry_price = trade.get('entry_price',0)
-        qty = trade.get('qty',0)
+        # Process trades
+        win = 0
+        loss = 0
+        breakeven = 0
+        cumulative_pnl = []
+        r_ratios = []
+        total_pnl = 0
 
-        pnl_post_fee = pnl - (entry_price * qty) * 0.07/100
+        for trade in trades:
+            pnl = trade.get('realized_pnl', 0)
+            entry_price = trade.get('entry_price',0)
+            qty = trade.get('qty',0)
 
-        if pnl_post_fee > 0.5:
-            win += 1
-            r_ratio = pnl / 2 
-            r_ratios.append(r_ratio)
-        elif pnl_post_fee < -0.5:
-            loss += 1
-        else:
-            breakeven += 1
-        
-        
-        total_pnl += pnl_post_fee
-        cumulative_pnl.append(total_pnl)
+            pnl_post_fee = pnl - (entry_price * qty) * 0.07/100
 
-    # Calculate Max Drawdown
-    max_drawdown = 0
-    peak = float('-inf')
-    for value in cumulative_pnl:
-        if value > peak:
-            peak = value
-        drawdown = peak - value
-        if drawdown > max_drawdown:
-            max_drawdown = drawdown
+            if pnl_post_fee > 0.5:
+                win += 1
+                r_ratio = pnl / 2 
+                r_ratios.append(r_ratio)
+            elif pnl_post_fee < -0.5:
+                loss += 1
+            else:
+                breakeven += 1
+            
+            
+            total_pnl += pnl_post_fee
+            cumulative_pnl.append(total_pnl)
 
-    total = len(trades)     
-    average_r_ratio = sum(r_ratios) / len(r_ratios)
+        # Calculate Max Drawdown
+        max_drawdown = 0
+        peak = float('-inf')
+        for value in cumulative_pnl:
+            if value > peak:
+                peak = value
+            drawdown = peak - value
+            if drawdown > max_drawdown:
+                max_drawdown = drawdown
 
-    return (
-        f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
-        f"Total Realized PnL: {total_pnl:.4f}\n"
-        f"Max Drawdown: {max_drawdown:.4f}\n"
-        f"Average R ratio: {average_r_ratio:.4f}"
-    )
+        total = len(trades)     
+        average_r_ratio = sum(r_ratios) / len(r_ratios)
+
+        msg += f"{trade_table} results:\n"
+        msg += f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
+        msg += f"Total Realized PnL: {total_pnl:.4f}\n"
+        msg += f"Max Drawdown: {max_drawdown:.4f}\n"
+        msg += f"Average R ratio: {average_r_ratio:.4f}"
+
+    return (msg)
 
