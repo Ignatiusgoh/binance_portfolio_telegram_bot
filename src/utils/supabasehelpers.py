@@ -53,20 +53,19 @@ def analyze_trades():
         total_pnl = 0
 
         for trade in trades:
-            pnl = trade.get('realized_pnl', 0)
-            entry_price = trade.get('entry_price',0)
-            qty = trade.get('qty',0)
+            if trade.get('is_closed', 0) == True:
+                pnl = trade.get('realized_pnl', 0)
+                entry_price = trade.get('entry_price',0)
+                qty = trade.get('qty',0)
 
-            # pnl_post_fee = pnl - (entry_price * qty) * 0.07/100
-
-            if pnl > 0.5:
-                win += 1
-                r_ratio = pnl / 2 
-                r_ratios.append(r_ratio)
-            elif pnl < -0.5:
-                loss += 1
-            else:
-                breakeven += 1
+                if pnl > 0.5:
+                    win += 1
+                    # r_ratio = pnl / 2 
+                    # r_ratios.append(r_ratio)
+                elif pnl < -0.5:
+                    loss += 1
+                else:
+                    breakeven += 1
             
             
             total_pnl += pnl
@@ -83,13 +82,13 @@ def analyze_trades():
                 max_drawdown = drawdown
 
         total = len(trades)   
-        average_r_ratio = sum(r_ratios) / len(r_ratios) if r_ratios else 0
+        # average_r_ratio = sum(r_ratios) / len(r_ratios) if r_ratios else 0
 
         msg += f"{trade_table} results:\n"
         msg += f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
         msg += f"Total Realized PnL: {total_pnl:.4f}\n"
         msg += f"Max Drawdown: {max_drawdown:.4f}\n"
-        msg += f"Average R ratio: {average_r_ratio:.4f}"
+        # msg += f"Average R ratio: {average_r_ratio:.4f}"
 
     return (msg)
 
