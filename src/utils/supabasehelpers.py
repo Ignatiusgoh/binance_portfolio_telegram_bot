@@ -88,6 +88,7 @@ def analyze_trades():
         msg += f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
         msg += f"Total Realized PnL: {total_pnl:.4f}\n"
         msg += f"Max Drawdown: {max_drawdown:.4f}\n"
+        msg += '\n'
         # msg += f"Average R ratio: {average_r_ratio:.4f}"
 
     return (msg)
