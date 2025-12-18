@@ -45,35 +45,40 @@ async def monitor_orders(context: ContextTypes.DEFAULT_TYPE):
 
     logs = get_latest_order_logs(limit=10)
     if not logs:
+        logging.debug("No logs found in order_groups table")
         return
 
-    # Sort logs by ID ascending to process them in order
-    logs.sort(key=lambda x: x.get('id', 0))
+    # Sort logs by order_id ascending to process them in order
+    # Note: order_id is both the primary key and the Binance order ID
+    logs.sort(key=lambda x: x.get('order_id', 0))
+    logging.debug(f"Monitoring orders. Current last_processed_id: {last_processed_id}, Found {len(logs)} logs (order_ids: {[log.get('order_id') for log in logs]})")
 
     # Initialize last_processed_id on first run
     if last_processed_id is None:
-        last_processed_id = logs[-1].get('id', 0)
-        logging.info(f"Initialized order monitoring. Starting from ID: {last_processed_id}")
+        last_processed_id = logs[-1].get('order_id', 0) if logs else 0
+        logging.info(f"Initialized order monitoring. Starting from order_id: {last_processed_id}")
         return
 
+    new_orders_found = 0
     for log in logs:
-        log_id = log.get('id', 0)
-        if log_id > last_processed_id:
+        log_order_id = log.get('order_id', 0)
+        if log_order_id > last_processed_id:
+            new_orders_found += 1
             order_type = log.get('type')
             direction = log.get('direction')
-            order_id = log.get('order_id')
+            binance_order_id = log.get('order_id')  # This is the Binance order ID
             symbol = "SOLUSDT" # Default or get from log if available
 
             # For entry trades (MO), we want to fetch the actual entry price
             entry_price = "N/A"
             if order_type == "MO":
-                order_details = get_order_details(symbol, order_id)
+                order_details = get_order_details(symbol, binance_order_id)
                 if order_details:
                     entry_price = order_details.get('avgPrice', "N/A")
 
             msg = f"🔔 *New Order Alert: {order_type}*\n\n"
             msg += f"🔹 *Direction:* {direction}\n"
-            msg += f"🔹 *Order ID:* `{order_id}`\n"
+            msg += f"🔹 *Order ID:* `{binance_order_id}`\n"
             
             if order_type == "MO":
                 msg += f"🔹 *Entry Price:* `{entry_price}`\n"
@@ -84,14 +89,21 @@ async def monitor_orders(context: ContextTypes.DEFAULT_TYPE):
             msg += f"🔹 *Trailing Value:* `{log.get('trailing_value')}`"
 
             try:
+                logging.info(f"📤 Sending notification for order_id {log_order_id} (type: {order_type}, direction: {direction})")
                 await context.bot.send_message(
                     chat_id=CHAT_ID,
                     text=msg,
                     parse_mode='Markdown'
                 )
-                last_processed_id = log_id
+                last_processed_id = log_order_id
+                logging.info(f"✅ Successfully sent notification. Updated last_processed_id to {last_processed_id}")
             except Exception as e:
-                logging.error(f"❌ Failed to send telegram notification: {e}")
+                logging.error(f"❌ Failed to send telegram notification for order_id {log_order_id}: {e}")
+    
+    if new_orders_found == 0:
+        logging.debug(f"No new orders found (last_processed_id: {last_processed_id})")
+    else:
+        logging.info(f"Processed {new_orders_found} new order(s)")
 
 # Build the application
 app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
