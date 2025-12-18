@@ -13,8 +13,13 @@ def init_logger():
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
     formatter = logging.Formatter(
-    '%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s | %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
+        '%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s | %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
+
+    # Set library loggers to WARNING to mask unnecessary INFO logs
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("apscheduler").setLevel(logging.WARNING)
+    logging.getLogger("telegram").setLevel(logging.WARNING)
