@@ -8,9 +8,9 @@ import time
 
 load_dotenv()
 
-orders_table = "orders" if int(os.getenv("STRATEGY_ENV")) == 1 else "orders2"
-order_groups_table = "order_groups" if int(os.getenv("STRATEGY_ENV")) == 1 else "order_groups2"
-trades_table = "trades" if int(os.getenv("STRATEGY_ENV")) == 1 else "trades2"
+orders_table = "orders" 
+order_groups_table = "order_groups" 
+trades_table = "trades" 
 
 def get_supabase_client():
     supabase_url = os.getenv("SUPABASE_URL")
@@ -26,70 +26,71 @@ def analyze_trades():
     max_retries = 5
     retry_delay = 0.5  # seconds
 
-    trade_tables = ["trades","trades2"]
-    msg = ""
+    trades = None
+    for attempt in range(max_retries):
+        try:
+            response = supabase.table(trades_table).select("*").order("entry_time").execute()
+            trades = response.data
+            if trades is not None:
+                break  # Exit loop if we got valid data
+        except Exception as e:
+            print(f"⚠️ Attempt {attempt + 1} failed: {e}")
+            time.sleep(retry_delay)
 
-    for trade_table in trade_tables:
-        trades = None
-        for attempt in range(max_retries):
-            try:
-                response = supabase.table(trade_table).select("*").order("entry_time").execute()
-                trades = response.data
-                if trades is not None:
-                    break  # Exit loop if we got valid data
-            except Exception as e:
-                print(f"⚠️ Attempt {attempt + 1} failed: {e}")
-                time.sleep(retry_delay)
+    if trades is None:
+        return "❌ Failed to fetch trade data after 5 attempts."
 
-        if trades is None:
-            return "❌ Failed to fetch trade data after 5 attempts."
+    # Process trades
+    win = 0
+    loss = 0
+    breakeven = 0
+    cumulative_pnl = []
+    total_pnl = 0
 
-        # Process trades
-        win = 0
-        loss = 0
-        breakeven = 0
-        cumulative_pnl = []
-        r_ratios = []
-        total_pnl = 0
-
-        for trade in trades:
-            if trade.get('is_closed', 0) == True:
-                pnl = trade.get('realized_pnl', 0)
-                entry_price = trade.get('entry_price',0)
-                qty = trade.get('qty',0)
-
-                if pnl > 0.5:
-                    win += 1
-                    # r_ratio = pnl / 2 
-                    # r_ratios.append(r_ratio)
-                elif pnl < -0.5:
-                    loss += 1
-                else:
-                    breakeven += 1
+    for trade in trades:
+        if trade.get('is_closed', 0) == True:
+            pnl = trade.get('realized_pnl', 0)
             
-            
-            total_pnl += pnl
-            cumulative_pnl.append(total_pnl)
+            if pnl > 0.5:
+                win += 1
+            elif pnl < -0.5:
+                loss += 1
+            else:
+                breakeven += 1
+        
+        total_pnl += pnl
+        cumulative_pnl.append(total_pnl)
 
-        # Calculate Max Drawdown
-        max_drawdown = 0
-        peak = float('-inf')
-        for value in cumulative_pnl:
-            if value > peak:
-                peak = value
-            drawdown = peak - value
-            if drawdown > max_drawdown:
-                max_drawdown = drawdown
+    # Calculate Max Drawdown
+    max_drawdown = 0
+    peak = float('-inf')
+    for value in cumulative_pnl:
+        if value > peak:
+            peak = value
+        drawdown = peak - value
+        if drawdown > max_drawdown:
+            max_drawdown = drawdown
 
-        total = len(trades)   
-        # average_r_ratio = sum(r_ratios) / len(r_ratios) if r_ratios else 0
+    total = len(trades)   
 
-        msg += f"{trade_table} results:\n"
-        msg += f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
-        msg += f"Total Realized PnL: {total_pnl:.4f}\n"
-        msg += f"Max Drawdown: {max_drawdown:.4f}\n"
-        msg += '\n'
-        # msg += f"Average R ratio: {average_r_ratio:.4f}"
+    msg = f"📊 Trade Results ({trades_table}):\n"
+    msg += f"Wins: {win}, Losses: {loss}, Breakeven: {breakeven}, Total: {total}\n"
+    msg += f"Total Realized PnL: {total_pnl:.4f}\n"
+    msg += f"Max Drawdown: {max_drawdown:.4f}\n"
 
-    return (msg)
+    return msg
+
+def get_latest_order_logs(limit=5):
+    """Fetches the latest order logs from the order_groups table."""
+    supabase = get_supabase_client()
+    try:
+        # Assuming order_groups has an 'id' or 'created_at' field for ordering.
+        # If not, we might need to use order_id or group_id if they are monotonic.
+        # Most Supabase tables have a created_at or id by default.
+        response = supabase.table(order_groups_table).select("*").order("id", desc=True).limit(limit).execute()
+        return response.data
+    except Exception as e:
+        logging.error(f"❌ Error fetching latest order logs: {e}")
+        return []
+
 
