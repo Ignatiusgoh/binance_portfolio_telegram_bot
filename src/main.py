@@ -12,14 +12,25 @@ from src.utils.logger import init_logger
 import os 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Initialize logger at the very start
 init_logger()
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')  # ID of the group chat to post updates to
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_API_KEY")
-api_key = os.getenv('BINANCE_API_KEY')
-api_secret = os.getenv('BINANCE_API_SECRET')
+logging.info("🚀 Starting Bot...")
+
+try:
+    load_dotenv()
+    TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+    CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_API_KEY")
+    api_key = os.getenv('BINANCE_API_KEY')
+    api_secret = os.getenv('BINANCE_API_SECRET')
+    
+    if not TELEGRAM_TOKEN:
+        logging.error("❌ TELEGRAM_TOKEN is missing from .env!")
+except Exception as e:
+    logging.error(f"❌ Error loading environment variables: {e}")
+
+# ... rest of the code ...
 
 # Store last processed order ID to avoid duplicate notifications
 # In a production environment, this should be persisted to a file or database

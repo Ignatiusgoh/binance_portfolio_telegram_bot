@@ -18,11 +18,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Choose an option below:", reply_markup=reply_markup)
 
 async def handle_custom_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
+
     text = update.message.text
     user = update.effective_user
     chat = update.effective_chat
     
-    logging.info(f"Button pressed: '{text}' | User: {user.first_name} ({user.id}) | Chat: {chat.title if chat.title else 'Private'} ({chat.id})")
+    # Catch-all log to see EVERY message the bot sees
+    logging.info(f"📥 RECEIVED: '{text}' from {user.first_name} ({user.id}) in {chat.type} chat ({chat.id})")
 
     if text == "📊 Show current portfolio balance":
         try:
