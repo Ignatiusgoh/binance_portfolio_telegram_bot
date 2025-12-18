@@ -8,10 +8,12 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, Callb
 from src.utils.telegramhelpers import start, handle_custom_buttons
 from src.utils.supabasehelpers import get_latest_order_logs
 from src.utils.binancehelpers import get_order_details
+from src.utils.logger import init_logger
 import os 
 from dotenv import load_dotenv
 
 load_dotenv()
+init_logger()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')  # ID of the group chat to post updates to
 supabase_url = os.getenv("SUPABASE_URL")

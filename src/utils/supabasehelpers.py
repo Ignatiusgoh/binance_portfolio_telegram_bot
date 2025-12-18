@@ -34,7 +34,7 @@ def analyze_trades():
             if trades is not None:
                 break  # Exit loop if we got valid data
         except Exception as e:
-            print(f"⚠️ Attempt {attempt + 1} failed: {e}")
+            logging.warning(f"⚠️ Attempt {attempt + 1} failed to fetch from {trades_table}: {e}")
             time.sleep(retry_delay)
 
     if trades is None:
