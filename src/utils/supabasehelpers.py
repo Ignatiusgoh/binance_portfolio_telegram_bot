@@ -87,7 +87,7 @@ def get_latest_order_logs(limit=5):
         # Assuming order_groups has an 'id' or 'created_at' field for ordering.
         # If not, we might need to use order_id or group_id if they are monotonic.
         # Most Supabase tables have a created_at or id by default.
-        response = supabase.table(order_groups_table).select("*").order("id", desc=True).limit(limit).execute()
+        response = supabase.table(order_groups_table).select("*").order("order_id", desc=True).limit(limit).execute()
         return response.data
     except Exception as e:
         logging.error(f"❌ Error fetching latest order logs: {e}")
