@@ -39,30 +39,43 @@ last_processed_id = None
 async def monitor_orders(context: ContextTypes.DEFAULT_TYPE):
     global last_processed_id
     
+    logging.info("🔄 Running order monitoring check...")
+    
     if not CHAT_ID:
         logging.warning("⚠️ TELEGRAM_CHAT_ID not set in .env. Skipping order monitoring.")
         return
 
     logs = get_latest_order_logs(limit=10)
     if not logs:
-        logging.debug("No logs found in order_groups table")
+        logging.info("ℹ️ No logs found in order_groups table")
         return
 
     # Sort logs by order_id ascending to process them in order
     # Note: order_id is both the primary key and the Binance order ID
-    logs.sort(key=lambda x: x.get('order_id', 0))
-    logging.debug(f"Monitoring orders. Current last_processed_id: {last_processed_id}, Found {len(logs)} logs (order_ids: {[log.get('order_id') for log in logs]})")
+    # Convert to int for proper comparison
+    try:
+        logs.sort(key=lambda x: int(x.get('order_id', 0)))
+        order_ids = [int(log.get('order_id', 0)) for log in logs]
+        logging.info(f"📊 Monitoring orders. Current last_processed_id: {last_processed_id}, Found {len(logs)} logs (order_ids: {order_ids})")
+    except (ValueError, TypeError) as e:
+        logging.error(f"❌ Error processing order_ids: {e}. Logs: {logs}")
+        return
 
     # Initialize last_processed_id on first run
     if last_processed_id is None:
-        last_processed_id = logs[-1].get('order_id', 0) if logs else 0
+        last_processed_id = int(logs[-1].get('order_id', 0)) if logs else 0
         logging.info(f"Initialized order monitoring. Starting from order_id: {last_processed_id}")
         return
 
     new_orders_found = 0
     for log in logs:
-        log_order_id = log.get('order_id', 0)
-        if log_order_id > last_processed_id:
+        try:
+            log_order_id = int(log.get('order_id', 0))
+        except (ValueError, TypeError):
+            logging.warning(f"⚠️ Invalid order_id in log: {log.get('order_id')}")
+            continue
+            
+        if log_order_id > int(last_processed_id):
             new_orders_found += 1
             order_type = log.get('type')
             direction = log.get('direction')
@@ -95,15 +108,15 @@ async def monitor_orders(context: ContextTypes.DEFAULT_TYPE):
                     text=msg,
                     parse_mode='Markdown'
                 )
-                last_processed_id = log_order_id
+                last_processed_id = int(log_order_id)
                 logging.info(f"✅ Successfully sent notification. Updated last_processed_id to {last_processed_id}")
             except Exception as e:
                 logging.error(f"❌ Failed to send telegram notification for order_id {log_order_id}: {e}")
     
     if new_orders_found == 0:
-        logging.debug(f"No new orders found (last_processed_id: {last_processed_id})")
+        logging.info(f"ℹ️ No new orders found (last_processed_id: {last_processed_id})")
     else:
-        logging.info(f"Processed {new_orders_found} new order(s)")
+        logging.info(f"✅ Processed {new_orders_found} new order(s)")
 
 # Build the application
 app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
