@@ -81,12 +81,11 @@ def analyze_trades():
     return msg
 
 def get_latest_order_logs(limit=10):
-    """Fetches the latest order logs from the order_groups table."""
+    """Fetches the latest order logs from the order_groups table, ordered by created_at."""
     supabase = get_supabase_client()
     try:
-        # Order by 'order_id' (primary key) to ensure we can track new entries
-        # The order_id column serves as both the primary key and Binance order ID
-        response = supabase.table(order_groups_table).select("*").order("order_id", desc=True).limit(limit).execute()
+        # Order by 'created_at' timestamp to track new entries chronologically
+        response = supabase.table(order_groups_table).select("*").order("created_at", desc=True).limit(limit).execute()
         logging.debug(f"Fetched {len(response.data)} order logs from Supabase")
         return response.data
     except Exception as e:
