@@ -61,14 +61,16 @@ async def monitor_orders(context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Initialize last_processed_timestamp on first run
+    # On first run, we'll process all existing logs, then set timestamp to the latest one
     if last_processed_timestamp is None:
         if logs:
-            last_processed_timestamp = logs[-1].get('created_at')
-            logging.info(f"Initialized order monitoring. Starting from created_at: {last_processed_timestamp}")
+            # Set to empty string so all existing logs will be processed
+            last_processed_timestamp = ""
+            logging.info(f"Initialized order monitoring. Will process {len(logs)} existing log(s) on first run.")
         else:
             last_processed_timestamp = ""
             logging.info("Initialized order monitoring. No existing logs found.")
-        return
+        # Don't return - continue to process logs below
 
     new_orders_found = 0
     for log in logs:
@@ -78,7 +80,10 @@ async def monitor_orders(context: ContextTypes.DEFAULT_TYPE):
             continue
         
         # Compare timestamps as strings (ISO format strings compare correctly)
-        if log_created_at > last_processed_timestamp:
+        # Empty string means process all logs (first run - any timestamp > "")
+        should_process = log_created_at > last_processed_timestamp
+        logging.info(f"🔍 Comparing: '{log_created_at}' > '{last_processed_timestamp}' = {should_process}")
+        if should_process:
             new_orders_found += 1
             order_type = log.get('type')
             direction = log.get('direction')
