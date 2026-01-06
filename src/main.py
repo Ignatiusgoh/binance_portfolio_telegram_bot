@@ -133,16 +133,18 @@ app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 job_queue = app.job_queue
 job_queue.run_repeating(monitor_orders, interval=30, first=10)
 
+# Add command handlers first (they have higher priority)
 app.add_handler(CommandHandler("start", start))
-
-# This keeps your old /balance, /positions, /stats commands (optional)
 app.add_handler(CommandHandler("balance", handle_custom_buttons))
 app.add_handler(CommandHandler("positions", handle_custom_buttons))
 app.add_handler(CommandHandler("stats", handle_custom_buttons))
 
+# Add message handler last to catch button presses
 # This handles button taps with nice labels
 # This filter ensures that the bot responds to text buttons even in groups
+logging.info("📋 Registering MessageHandler for button presses...")
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_custom_buttons))
+logging.info("✅ All handlers registered successfully")
 
 print("Bot is running...")
 app.run_polling()
