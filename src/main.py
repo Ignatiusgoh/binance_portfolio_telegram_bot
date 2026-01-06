@@ -133,17 +133,32 @@ app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 job_queue = app.job_queue
 job_queue.run_repeating(monitor_orders, interval=30, first=10)
 
-# Add command handlers first (they have higher priority)
+# Add a catch-all message handler for logging (in a separate group)
+async def log_all_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Log all incoming messages for debugging"""
+    if update.message:
+        chat_type = update.effective_chat.type if update.effective_chat else 'Unknown'
+        logging.info(f"🔍 RAW MESSAGE: text='{update.message.text}', chat_type={chat_type}, chat_id={update.effective_chat.id if update.effective_chat else 'N/A'}, user_id={update.effective_user.id if update.effective_user else 'N/A'}")
+    elif update.callback_query:
+        logging.info(f"🔍 RAW CALLBACK: data='{update.callback_query.data}', chat_id={update.effective_chat.id if update.effective_chat else 'N/A'}")
+    else:
+        logging.info(f"🔍 RAW UPDATE: type={type(update)}, update_id={update.update_id}")
+
+# Add command handlers (default group=0)
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("balance", handle_custom_buttons))
 app.add_handler(CommandHandler("positions", handle_custom_buttons))
 app.add_handler(CommandHandler("stats", handle_custom_buttons))
 
-# Add message handler last to catch button presses
-# This handles button taps with nice labels
-# This filter ensures that the bot responds to text buttons even in groups
+# Add message handler to catch button presses (default group=0, higher priority)
+# This MUST be before the catch-all handler
 logging.info("📋 Registering MessageHandler for button presses...")
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_custom_buttons))
+
+# Add catch-all handler in group=1 (runs AFTER group=0 handlers)
+# This will only log messages that weren't handled by group=0 handlers
+app.add_handler(MessageHandler(filters.ALL, log_all_messages), group=1)
+
 logging.info("✅ All handlers registered successfully")
 
 print("Bot is running...")

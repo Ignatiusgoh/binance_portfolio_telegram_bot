@@ -18,7 +18,9 @@ def get_reply_markup():
     return ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True, one_time_keyboard=False)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info(f"🚀 /start command received from user {update.effective_user.id if update.effective_user else 'Unknown'}")
     await update.message.reply_text("Choose an option below:", reply_markup=get_reply_markup())
+    logging.info(f"✅ Keyboard sent to user {update.effective_user.id if update.effective_user else 'Unknown'}")
 
 async def handle_custom_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -34,8 +36,17 @@ async def handle_custom_buttons(update: Update, context: ContextTypes.DEFAULT_TY
         user = update.effective_user
         chat = update.effective_chat
         
-        # Catch-all log to see EVERY message the bot sees
-        logging.info(f"📥 RECEIVED: '{text}' from {user.first_name if user else 'Unknown'} ({user.id if user else 'N/A'}) in {chat.type if chat else 'Unknown'} chat ({chat.id if chat else 'N/A'})")
+        # Enhanced logging for group chats
+        chat_type = chat.type if chat else 'Unknown'
+        chat_id = chat.id if chat else 'N/A'
+        user_id = user.id if user else 'N/A'
+        user_name = user.first_name if user else 'Unknown'
+        
+        logging.info(f"📥 RECEIVED: '{text}' from {user_name} ({user_id}) in {chat_type} chat ({chat_id})")
+        
+        # Log if it's a group chat
+        if chat_type in ['group', 'supergroup']:
+            logging.info(f"👥 GROUP CHAT DETECTED - Processing button press in group {chat_id}")
 
         # Get reply_markup to ensure buttons persist
         reply_markup = get_reply_markup()
